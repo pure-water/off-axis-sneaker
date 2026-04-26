@@ -33,6 +33,7 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [cdnAvailable, setCdnAvailable] = useState(true);
+  const [useCpuInference, setUseCpuInference] = useState(false);
 
   // Check if MediaPipe is available
   useEffect(() => {
@@ -195,7 +196,8 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
         maxNumFaces: 1,
         refineLandmarks: true,
         minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minTrackingConfidence: 0.5,
+        useCpuInference
       });
       
       // Set up results handler
@@ -289,8 +291,29 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
     window.location.reload();
   };
 
+  const handleInferenceModeToggle = () => {
+    const nextUseCpuInference = !useCpuInference;
+    setUseCpuInference(nextUseCpuInference);
+
+    if (isRunning) {
+      stopFaceMesh();
+      setTimeout(() => {
+        startFaceMesh();
+      }, 200);
+    }
+  };
+
   return (
     <div className="relative w-full h-full">
+      <div className="absolute top-2 left-2 z-50">
+        <button
+          onClick={handleInferenceModeToggle}
+          className="px-2 py-1 text-xs bg-black bg-opacity-70 text-white rounded border border-white border-opacity-30 hover:bg-opacity-85"
+          title="Toggle MediaPipe inference mode"
+        >
+          Inference: {useCpuInference ? 'CPU' : 'GPU/Auto'}
+        </button>
+      </div>
       <>
           {isLoading && !cameraReady && (
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-30 text-white">
