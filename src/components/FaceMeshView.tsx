@@ -27,6 +27,11 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const faceMeshRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
+  const perfSampleCountRef = useRef(0);
+  const sendMsAccumRef = useRef(0);
+  const callbackMsAccumRef = useRef(0);
+  const frameIntervalMsAccumRef = useRef(0);
+  const lastOnResultsTsRef = useRef<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
@@ -92,6 +97,12 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
   };
 
   const onResults = (results: any) => {
+    const callbackStart = performance.now();
+    if (lastOnResultsTsRef.current !== null) {
+      frameIntervalMsAccumRef.current += callbackStart - lastOnResultsTsRef.current;
+    }
+    lastOnResultsTsRef.current = callbackStart;
+
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -167,6 +178,24 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
     }
 
     ctx.restore();
+
+    const callbackEnd = performance.now();
+    callbackMsAccumRef.current += callbackEnd - callbackStart;
+    perfSampleCountRef.current += 1;
+
+    if (perfSampleCountRef.current % 30 === 0) {
+      const samples = perfSampleCountRef.current;
+      const sendAvg = sendMsAccumRef.current / samples;
+      const callbackAvg = callbackMsAccumRef.current / samples;
+      const frameIntervals = Math.max(1, samples - 1);
+      const frameIntervalAvg = frameIntervalMsAccumRef.current / frameIntervals;
+      const fpsApprox = 1000 / frameIntervalAvg;
+
+      console.log(
+        `[FaceMesh perf] samples=${samples} sendAvg=${sendAvg.toFixed(2)}ms ` +
+        `callbackAvg=${callbackAvg.toFixed(2)}ms frameIntervalAvg=${frameIntervalAvg.toFixed(2)}ms (~${fpsApprox.toFixed(1)} FPS)`
+      );
+    }
   };
 
   // Initialize and start FaceMesh
@@ -175,6 +204,11 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
     
     try {
       setIsLoading(true);
+      perfSampleCountRef.current = 0;
+      sendMsAccumRef.current = 0;
+      callbackMsAccumRef.current = 0;
+      frameIntervalMsAccumRef.current = 0;
+      lastOnResultsTsRef.current = null;
       
       // Check if MediaPipe is available
       if (!cdnAvailable) {
@@ -208,7 +242,10 @@ const FaceMeshView: React.FC<FaceMeshViewProps> = ({ onHeadPoseUpdate }) => {
         onFrame: async () => {
           if (faceMeshRef.current && webcamRef.current && webcamRef.current.video) {
             try {
+              const sendStart = performance.now();
               await faceMeshRef.current.send({ image: webcamRef.current.video });
+              const sendEnd = performance.now();
+              sendMsAccumRef.current += sendEnd - sendStart;
             } catch (error) {
               console.error("Error sending frame to facemesh:", error);
             }
