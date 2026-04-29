@@ -18,6 +18,8 @@ function App() {
   const [shoePosition, setShoePosition] = useState({ x: 0, y: -0.09, z: -0.03 });
   const [shoeScale, setShoeScale] = useState(0.071);
   const [shoeRotation, setShoeRotation] = useState({ x: 0, y: -0.628, z: 0 });
+  const [currentModel, setCurrentModel] = useState('shoe');
+  const [modelOptions, setModelOptions] = useState<string[]>(['shoe']);
   const headPoseTrackerRef = useRef(new HeadPoseTracker(0.3));
   const threeViewRef = useRef<ThreeViewHandle>(null);
 
@@ -56,6 +58,31 @@ function App() {
     return () => clearInterval(intervalId);
   }, []);
 
+
+  useEffect(() => {
+    const loadModelOptions = async () => {
+      try {
+        const response = await fetch('/models/index.json');
+        if (!response.ok) {
+          return;
+        }
+        const models = await response.json();
+        if (Array.isArray(models) && models.length > 0) {
+          setModelOptions(models);
+          if (!models.includes('shoe')) {
+            setCurrentModel(models[0]);
+            if (threeViewRef.current) {
+              threeViewRef.current.setModel(models[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not load model index:', error);
+      }
+    };
+
+    loadModelOptions();
+  }, []);
   const handleHeadPoseUpdate = useCallback((rawPose: HeadPose | null) => {
     if (rawPose) {
       const smoothedPose = headPoseTrackerRef.current.extractHeadPoseFromLandmarks([
@@ -138,6 +165,13 @@ function App() {
     }
   };
 
+  const handleModelChange = (modelName: string) => {
+    setCurrentModel(modelName);
+    if (threeViewRef.current) {
+      threeViewRef.current.setModel(modelName);
+    }
+  };
+
   const handleShoeRotationChange = (x: number, y: number, z: number) => {
     setShoeRotation({ x, y, z });
     if (threeViewRef.current) {
@@ -184,6 +218,9 @@ function App() {
           initialPosition={shoePosition}
           initialScale={shoeScale}
           initialRotation={shoeRotation}
+          modelOptions={modelOptions}
+          currentModel={currentModel}
+          onModelChange={handleModelChange}
         />
 
         <div className="absolute bottom-4 right-4 z-10 rounded-lg overflow-hidden shadow-2xl border-2 border-white">

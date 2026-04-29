@@ -16,6 +16,7 @@ export interface ThreeViewHandle {
   getModelPosition: () => { x: number; y: number; z: number };
   getModelScale: () => number;
   getModelRotation: () => { x: number; y: number; z: number };
+  setModel: (modelName: string) => void;
 }
 
 const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref) => {
@@ -101,6 +102,11 @@ const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref
         return sceneManagerRef.current.getModelRotation();
       }
       return { x: 0, y: -0.628, z: 0 };
+    },
+    setModel: (modelName: string) => {
+      if (sceneManagerRef.current) {
+        sceneManagerRef.current.setModel(modelName);
+      }
     },
   }));
 

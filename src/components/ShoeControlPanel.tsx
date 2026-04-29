@@ -8,6 +8,9 @@ interface ShoeControlPanelProps {
   initialPosition: { x: number; y: number; z: number };
   initialScale: number;
   initialRotation: { x: number; y: number; z: number };
+  modelOptions: string[];
+  currentModel: string;
+  onModelChange: (modelName: string) => void;
 }
 
 const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
@@ -16,7 +19,10 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
   onRotationChange,
   initialPosition,
   initialScale,
-  initialRotation
+  initialRotation,
+  modelOptions,
+  currentModel,
+  onModelChange
 }) => {
   const [position, setPosition] = useState(initialPosition);
   const [scale, setScale] = useState(initialScale);
@@ -120,6 +126,22 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
                 onChange={(e) => handleScaleChange(parseFloat(e.target.value))}
                 className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
               />
+            </div>
+
+            <div className="pt-2 border-t border-gray-600">
+              <label className="text-xs block mb-1">Model</label>
+              <select
+                value={currentModel}
+                onChange={(e) => onModelChange(e.target.value)}
+                className="w-full text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1"
+              >
+                {modelOptions.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gray-300 mt-1">Switch model here from the control panel.</p>
             </div>
 
             <div className="pt-2 border-t border-gray-600">
