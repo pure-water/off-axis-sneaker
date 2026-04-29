@@ -138,6 +138,7 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
                 <option value="/models/shoe.glb">Shoe (default)</option>
                 <option value="/models/face.glb">Face (alt test model)</option>
                 <option value="/models/ak47.glb">AK-47 (custom)</option>
+                <option value="/models/porche.glb">Porche (custom)</option>
               </select>
             </div>
 
