@@ -80,6 +80,23 @@ export class ThreeSceneManager {
     return null;
   }
 
+
+  private fitModelToDefaultPose(object: THREE.Object3D): void {
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    object.position.sub(center);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetSize = 0.18;
+    const normalizedScale = maxDim > 0 ? targetSize / maxDim : 1;
+    object.scale.setScalar(normalizedScale);
+
+    object.position.add(new THREE.Vector3(0, -0.09, -0.03));
+    object.rotation.set(0, -0.628, 0);
+  }
+
   private loadModel(modelName: string): void {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
@@ -109,9 +126,7 @@ export class ThreeSceneManager {
         modelPath,
         (gltf) => {
         this.model = gltf.scene;
-        this.model.position.set(0, -0.09, -0.03);
-        this.model.rotation.set(0, -0.628, 0);
-        this.model.scale.set(0.071, 0.071, 0.071);
+        this.fitModelToDefaultPose(this.model);
         this.scene.add(this.model);
         },
         undefined,

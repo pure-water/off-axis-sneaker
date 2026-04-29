@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:model-index": "node scripts/generate-model-index.mjs",
+    "predev": "npm run generate:model-index",
+    "prebuild": "npm run generate:model-index"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1640029074",
