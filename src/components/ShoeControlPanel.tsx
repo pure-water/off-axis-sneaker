@@ -28,6 +28,7 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
   const [scale, setScale] = useState(initialScale);
   const [rotation, setRotation] = useState(initialRotation);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [customModelName, setCustomModelName] = useState('');
 
   useEffect(() => {
     setPosition(initialPosition);
@@ -50,6 +51,13 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
     const newRotation = { ...rotation, [axis]: value };
     setRotation(newRotation);
     onRotationChange(newRotation.x, newRotation.y, newRotation.z);
+  };
+
+
+  const handleCustomModelLoad = () => {
+    const trimmed = customModelName.trim();
+    if (!trimmed) return;
+    onModelChange(trimmed);
   };
 
   return (

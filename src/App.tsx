@@ -57,6 +57,31 @@ function App() {
     return () => clearInterval(intervalId);
   }, []);
 
+
+  useEffect(() => {
+    const loadModelOptions = async () => {
+      try {
+        const response = await fetch('/models/index.json');
+        if (!response.ok) {
+          return;
+        }
+        const models = await response.json();
+        if (Array.isArray(models) && models.length > 0) {
+          setModelOptions(models);
+          if (!models.includes('shoe')) {
+            setCurrentModel(models[0]);
+            if (threeViewRef.current) {
+              threeViewRef.current.setModel(models[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not load model index:', error);
+      }
+    };
+
+    loadModelOptions();
+  }, []);
   const handleHeadPoseUpdate = useCallback((rawPose: HeadPose | null) => {
     if (rawPose) {
       const smoothedPose = headPoseTrackerRef.current.extractHeadPoseFromLandmarks([
@@ -136,6 +161,14 @@ function App() {
     setShoeScale(scale);
     if (threeViewRef.current) {
       threeViewRef.current.updateModelScale(scale);
+    }
+  };
+
+  const handleModelChange = (modelName: string) => {
+    setCurrentModel(modelName);
+    setModelOptions((prev) => (prev.includes(modelName) ? prev : [...prev, modelName]));
+    if (threeViewRef.current) {
+      threeViewRef.current.setModel(modelName);
     }
   };
 

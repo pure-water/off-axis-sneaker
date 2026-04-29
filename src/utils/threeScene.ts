@@ -50,12 +50,37 @@ export class ThreeSceneManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     options.container.appendChild(this.renderer.domElement);
 
-    this.loadShoeModel();
+    this.loadModel(this.currentModelName);
     this.createWireframeRoom();
     this.createDebugHelpers();
   }
 
-  private loadShoeModel(): void {
+  private async findBestModelPath(modelName: string): Promise<string | null> {
+    const normalized = modelName.trim().toLowerCase();
+    const candidates = [
+      `/models/${normalized}.glb`,
+      `/models/${normalized}/${normalized}.glb`,
+      `/models/${normalized}/main.glb`,
+      `/models/${normalized}/model.glb`,
+      `/models/${normalized}/${normalized}-low.glb`,
+      `/models/${normalized}/${normalized}_low.glb`
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(candidate, { method: 'HEAD' });
+        if (response.ok) {
+          return candidate;
+        }
+      } catch (error) {
+        console.warn('Model lookup failed:', candidate, error);
+      }
+    }
+
+    return null;
+  }
+
+  private loadModel(modelName: string): void {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
 
