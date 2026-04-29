@@ -23,6 +23,7 @@ export class ThreeSceneManager {
   private debugMode: boolean = false;
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
+  private currentModelName = 'shoe';
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -49,12 +50,54 @@ export class ThreeSceneManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     options.container.appendChild(this.renderer.domElement);
 
-    this.loadShoeModel();
+    this.loadModel(this.currentModelName);
     this.createWireframeRoom();
     this.createDebugHelpers();
   }
 
-  private loadShoeModel(): void {
+  private async findBestModelPath(modelName: string): Promise<string | null> {
+    const normalized = modelName.trim().toLowerCase();
+    const candidates = [
+      `/models/${normalized}.glb`,
+      `/models/${normalized}/${normalized}.glb`,
+      `/models/${normalized}/main.glb`,
+      `/models/${normalized}/model.glb`,
+      `/models/${normalized}/${normalized}-low.glb`,
+      `/models/${normalized}/${normalized}_low.glb`
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(candidate, { method: 'HEAD' });
+        if (response.ok) {
+          return candidate;
+        }
+      } catch (error) {
+        console.warn('Model lookup failed:', candidate, error);
+      }
+    }
+
+    return null;
+  }
+
+
+  private fitModelToDefaultPose(object: THREE.Object3D): void {
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    object.position.sub(center);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetSize = 0.18;
+    const normalizedScale = maxDim > 0 ? targetSize / maxDim : 1;
+    object.scale.setScalar(normalizedScale);
+
+    object.position.add(new THREE.Vector3(0, -0.09, -0.03));
+    object.rotation.set(0, -0.628, 0);
+  }
+
+  private loadModel(modelName: string): void {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
 
@@ -73,20 +116,34 @@ export class ThreeSceneManager {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
 
-    loader.load(
-      '/models/shoe.glb',
-      (gltf) => {
-        this.model = gltf.scene;
-        this.model.position.set(0, -0.09, -0.03);
-        this.model.rotation.set(0, -0.628, 0);
-        this.model.scale.set(0.071, 0.071, 0.071);
-        this.scene.add(this.model);
-      },
-      undefined,
-      (error) => {
-        console.error('Error loading shoe model:', error);
+    this.findBestModelPath(modelName).then((modelPath) => {
+      if (!modelPath) {
+        console.error(`No .glb model found for "${modelName}" under /public/models.`);
+        return;
       }
-    );
+
+      loader.load(
+        modelPath,
+        (gltf) => {
+        this.model = gltf.scene;
+        this.fitModelToDefaultPose(this.model);
+        this.scene.add(this.model);
+        },
+        undefined,
+        (error) => {
+          console.error('Error loading model:', error);
+        }
+      );
+    });
+  }
+
+  setModel(modelName: string): void {
+    this.currentModelName = modelName;
+    if (this.model) {
+      this.scene.remove(this.model);
+      this.model = null;
+    }
+    this.loadModel(modelName);
   }
 
   private createWireframeRoom(): void {
