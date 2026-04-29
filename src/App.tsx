@@ -167,6 +167,7 @@ function App() {
 
   const handleModelChange = (modelName: string) => {
     setCurrentModel(modelName);
+    setModelOptions((prev) => (prev.includes(modelName) ? prev : [...prev, modelName]));
     if (threeViewRef.current) {
       threeViewRef.current.setModel(modelName);
     }

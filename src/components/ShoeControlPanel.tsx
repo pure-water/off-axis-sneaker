@@ -28,6 +28,7 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
   const [scale, setScale] = useState(initialScale);
   const [rotation, setRotation] = useState(initialRotation);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [customModelName, setCustomModelName] = useState('');
 
   useEffect(() => {
     setPosition(initialPosition);
@@ -50,6 +51,13 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
     const newRotation = { ...rotation, [axis]: value };
     setRotation(newRotation);
     onRotationChange(newRotation.x, newRotation.y, newRotation.z);
+  };
+
+
+  const handleCustomModelLoad = () => {
+    const trimmed = customModelName.trim();
+    if (!trimmed) return;
+    onModelChange(trimmed);
   };
 
   return (
@@ -142,6 +150,22 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
                 ))}
               </select>
               <p className="text-[10px] text-gray-300 mt-1">Switch model here from the control panel.</p>
+              <div className="mt-2 flex gap-1">
+                <input
+                  type="text"
+                  placeholder="e.g. microphone"
+                  value={customModelName}
+                  onChange={(e) => setCustomModelName(e.target.value)}
+                  className="w-full text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleCustomModelLoad}
+                  className="text-xs px-2 py-1 bg-blue-600 rounded hover:bg-blue-500"
+                >
+                  Load
+                </button>
+              </div>
             </div>
 
             <div className="pt-2 border-t border-gray-600">
