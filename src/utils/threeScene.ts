@@ -23,6 +23,7 @@ export class ThreeSceneManager {
   private debugMode: boolean = false;
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
+  private modelPath = '/models/shoe.glb';
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -74,8 +75,11 @@ export class ThreeSceneManager {
     loader.setDRACOLoader(dracoLoader);
 
     loader.load(
-      '/models/shoe.glb',
+      this.modelPath,
       (gltf) => {
+        if (this.model) {
+          this.scene.remove(this.model);
+        }
         this.model = gltf.scene;
         this.model.position.set(0, -0.09, -0.03);
         this.model.rotation.set(0, -0.628, 0);
@@ -84,9 +88,14 @@ export class ThreeSceneManager {
       },
       undefined,
       (error) => {
-        console.error('Error loading shoe model:', error);
+        console.error(`Error loading model at ${this.modelPath}:`, error);
       }
     );
+  }
+
+  setModelPath(path: string): void {
+    this.modelPath = path;
+    this.loadShoeModel();
   }
 
   private createWireframeRoom(): void {

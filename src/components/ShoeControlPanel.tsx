@@ -8,6 +8,9 @@ interface ShoeControlPanelProps {
   initialPosition: { x: number; y: number; z: number };
   initialScale: number;
   initialRotation: { x: number; y: number; z: number };
+  selectedModel: string;
+  onModelChange: (path: string) => void;
+  onResetTransform: () => void;
 }
 
 const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
@@ -16,7 +19,10 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
   onRotationChange,
   initialPosition,
   initialScale,
-  initialRotation
+  initialRotation,
+  selectedModel,
+  onModelChange,
+  onResetTransform
 }) => {
   const [position, setPosition] = useState(initialPosition);
   const [scale, setScale] = useState(initialScale);
@@ -123,6 +129,18 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
             </div>
 
             <div className="pt-2 border-t border-gray-600">
+              <label className="text-xs block mb-1">Model</label>
+              <select
+                value={selectedModel}
+                onChange={(e) => onModelChange(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-500 rounded px-2 py-1 text-xs"
+              >
+                <option value="/models/shoe.glb">Shoe (default)</option>
+                <option value="/models/face.glb">Face (alt test model)</option>
+              </select>
+            </div>
+
+            <div className="pt-2 border-t border-gray-600">
               <label className="text-xs block mb-1">Rotation: {(rotation.y * 180 / Math.PI).toFixed(0)}°</label>
               <input
                 type="range"
@@ -134,6 +152,14 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
                 className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
+
+            <button
+              type="button"
+              onClick={onResetTransform}
+              className="w-full mt-2 bg-white text-black text-xs rounded py-1 hover:bg-gray-200"
+            >
+              Reset position/scale
+            </button>
           </div>
         </div>
       )}
