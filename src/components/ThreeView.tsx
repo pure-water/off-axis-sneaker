@@ -5,6 +5,7 @@ import { CalibrationData } from '../utils/calibration';
 
 interface ThreeViewProps {
   headPose: HeadPose | null;
+  onModelLoaded?: (transform: { position: { x: number; y: number; z: number }; scale: number; rotation: { x: number; y: number; z: number } }) => void;
 }
 
 export interface ThreeViewHandle {
@@ -19,7 +20,7 @@ export interface ThreeViewHandle {
   setModel: (modelName: string) => void;
 }
 
-const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref) => {
+const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose, onModelLoaded }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneManagerRef = useRef<ThreeSceneManager | null>(null);
 
@@ -29,7 +30,8 @@ const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref
     sceneManagerRef.current = new ThreeSceneManager({
       container: containerRef.current,
       width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight
+      height: containerRef.current.clientHeight,
+      onModelLoaded
     });
 
     sceneManagerRef.current.start();
@@ -51,7 +53,7 @@ const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref
         sceneManagerRef.current.dispose();
       }
     };
-  }, []);
+  }, [onModelLoaded]);
 
   useEffect(() => {
     if (headPose && sceneManagerRef.current) {
@@ -84,13 +86,13 @@ const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref
       if (sceneManagerRef.current) {
         return sceneManagerRef.current.getModelPosition();
       }
-      return { x: 0, y: -0.09, z: -0.03 };
+      return { x: 0.006, y: -0.11, z: -0.139 };
     },
     getModelScale: () => {
       if (sceneManagerRef.current) {
         return sceneManagerRef.current.getModelScale();
       }
-      return 0.071;
+      return 0.055;
     },
     updateModelRotation: (x: number, y: number, z: number) => {
       if (sceneManagerRef.current) {
