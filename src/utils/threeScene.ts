@@ -117,13 +117,13 @@ export class ThreeSceneManager {
     const needsPorcheLight = normalized === 'porche';
 
     if (needsPorcheLight && this.porcheLights.length === 0) {
-      const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
       keyLight.position.set(1.5, 2.2, 1.8);
 
-      const fillLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      const fillLight = new THREE.DirectionalLight(0xffffff, 2.1);
       fillLight.position.set(-2.0, 1.0, 1.2);
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x202020, 1.1);
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x303030, 1.8);
 
       this.porcheLights = [keyLight, fillLight, hemiLight];
       this.porcheLights.forEach((light) => this.scene.add(light));
@@ -202,6 +202,18 @@ export class ThreeSceneManager {
               meshCount += 1;
               child.castShadow = false;
               child.receiveShadow = true;
+
+              if (modelName.trim().toLowerCase() === 'porche') {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((material) => {
+                  if ('metalness' in material && typeof material.metalness === 'number') {
+                    material.metalness = Math.max(0, material.metalness - 0.25);
+                  }
+                  if ('roughness' in material && typeof material.roughness === 'number') {
+                    material.roughness = Math.max(0.12, material.roughness - 0.1);
+                  }
+                });
+              }
             }
           });
 
