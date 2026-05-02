@@ -101,6 +101,13 @@ function App() {
 
     loadModelOptions();
   }, []);
+
+  const handleModelLoaded = useCallback((transform: { position: { x: number; y: number; z: number }; scale: number; rotation: { x: number; y: number; z: number } }) => {
+    setShoePosition(transform.position);
+    setShoeScale(transform.scale);
+    setShoeRotation(transform.rotation);
+  }, []);
+
   const handleHeadPoseUpdate = useCallback((rawPose: HeadPose | null) => {
     if (rawPose) {
       const smoothedPose = headPoseTrackerRef.current.extractHeadPoseFromLandmarks([
@@ -238,6 +245,7 @@ function App() {
         <div className="absolute inset-0">
           <ThreeView
             headPose={currentHeadPose}
+            onModelLoaded={handleModelLoaded}
             ref={threeViewRef}
           />
         </div>

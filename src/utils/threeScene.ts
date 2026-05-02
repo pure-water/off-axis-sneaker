@@ -9,6 +9,7 @@ export interface ThreeSceneOptions {
   container: HTMLElement;
   width?: number;
   height?: number;
+  onModelLoaded?: (transform: { position: { x: number; y: number; z: number }; scale: number; rotation: { x: number; y: number; z: number } }) => void;
 }
 
 export class ThreeSceneManager {
@@ -25,6 +26,7 @@ export class ThreeSceneManager {
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
   private currentModelName = 'shoe';
+  private onModelLoaded?: ThreeSceneOptions['onModelLoaded'];
   private porcheLights: THREE.Light[] = [];
 
   constructor(options: ThreeSceneOptions) {
@@ -51,6 +53,8 @@ export class ThreeSceneManager {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     options.container.appendChild(this.renderer.domElement);
+
+    this.onModelLoaded = options.onModelLoaded;
 
     this.loadModel(this.currentModelName);
     this.createWireframeRoom();
@@ -226,6 +230,12 @@ export class ThreeSceneManager {
           });
 
           this.scene.add(this.model);
+
+          this.onModelLoaded?.({
+            position: { x: this.model.position.x, y: this.model.position.y, z: this.model.position.z },
+            scale: this.model.scale.x,
+            rotation: { x: this.model.rotation.x, y: this.model.rotation.y, z: this.model.rotation.z }
+          });
         },
           undefined,
           (error) => {
