@@ -7,6 +7,24 @@ import ShoeControlPanel from './components/ShoeControlPanel';
 import { HeadPose, HeadPoseTracker } from './utils/headPose';
 import { calibrationManager, CalibrationData } from './utils/calibration';
 
+
+const getModelDefaults = (modelName: string) => {
+  const normalized = modelName.trim().toLowerCase();
+  if (normalized === 'shoe') {
+    return {
+      position: { x: 0.006, y: -0.11, z: -0.139 },
+      scale: 0.055,
+      rotation: { x: 0, y: -0.628, z: 0 }
+    };
+  }
+
+  return {
+    position: { x: 0, y: -0.07, z: -0.03 },
+    scale: 0.071,
+    rotation: { x: 0, y: -0.628, z: 0 }
+  };
+};
+
 function App() {
   const [isCdnAvailable, setIsCdnAvailable] = useState(true);
   const [isCheckingCdn, setIsCheckingCdn] = useState(true);
@@ -15,9 +33,9 @@ function App() {
   const [showCalibration, setShowCalibration] = useState(false);
   const [calibration, setCalibration] = useState<CalibrationData>(calibrationManager.getCalibration());
   const [debugMode, setDebugMode] = useState(false);
-  const [shoePosition, setShoePosition] = useState({ x: 0.006, y: -0.11, z: -0.139 });
-  const [shoeScale, setShoeScale] = useState(0.055);
-  const [shoeRotation, setShoeRotation] = useState({ x: 0, y: -0.628, z: 0 });
+  const [shoePosition, setShoePosition] = useState(getModelDefaults('shoe').position);
+  const [shoeScale, setShoeScale] = useState(getModelDefaults('shoe').scale);
+  const [shoeRotation, setShoeRotation] = useState(getModelDefaults('shoe').rotation);
   const [currentModel, setCurrentModel] = useState('shoe');
   const [modelOptions, setModelOptions] = useState<string[]>(['shoe']);
   const headPoseTrackerRef = useRef(new HeadPoseTracker(0.3));
@@ -166,10 +184,22 @@ function App() {
   };
 
   const handleModelChange = (modelName: string) => {
+    const defaults = getModelDefaults(modelName);
+
     setCurrentModel(modelName);
     setModelOptions((prev) => (prev.includes(modelName) ? prev : [...prev, modelName]));
+    setShoePosition(defaults.position);
+    setShoeScale(defaults.scale);
+    setShoeRotation(defaults.rotation);
+
     if (threeViewRef.current) {
       threeViewRef.current.setModel(modelName);
+      setTimeout(() => {
+        if (!threeViewRef.current) return;
+        threeViewRef.current.updateModelPosition(defaults.position.x, defaults.position.y, defaults.position.z);
+        threeViewRef.current.updateModelScale(defaults.scale);
+        threeViewRef.current.updateModelRotation(defaults.rotation.x, defaults.rotation.y, defaults.rotation.z);
+      }, 0);
     }
   };
 
