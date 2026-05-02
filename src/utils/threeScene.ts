@@ -24,6 +24,7 @@ export class ThreeSceneManager {
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
   private currentModelName = 'shoe';
+  private modelLoadRequestId = 0;
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -70,7 +71,8 @@ export class ThreeSceneManager {
       try {
         const response = await fetch(candidate, { method: 'HEAD' });
         if (response.ok) {
-          return candidate;
+          const pointerUrl = await this.resolveModelPointerUrl(candidate, response);
+          return pointerUrl || candidate;
         }
       } catch (error) {
         console.warn('Model lookup failed:', candidate, error);
@@ -80,7 +82,33 @@ export class ThreeSceneManager {
     return null;
   }
 
+  private async resolveModelPointerUrl(candidate: string, headResponse: Response): Promise<string | null> {
+    const contentType = headResponse.headers.get('content-type') || '';
+    const isLikelyText = contentType.includes('text/plain') || contentType.includes('application/json');
+
+    if (!isLikelyText) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(candidate);
+      if (!response.ok) {
+        return null;
+      }
+
+      const body = (await response.text()).trim();
+      if (/^https?:\/\//i.test(body)) {
+        return body;
+      }
+    } catch (error) {
+      console.warn('Model pointer resolution failed:', candidate, error);
+    }
+
+    return null;
+  }
+
   private loadModel(modelName: string): void {
+    const requestId = ++this.modelLoadRequestId;
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
 
@@ -100,6 +128,10 @@ export class ThreeSceneManager {
     loader.setDRACOLoader(dracoLoader);
 
     this.findBestModelPath(modelName).then((modelPath) => {
+      if (requestId !== this.modelLoadRequestId) {
+        return;
+      }
+
       if (!modelPath) {
         console.error(`No .glb model found for "${modelName}" under /public/models.`);
         return;
@@ -108,6 +140,9 @@ export class ThreeSceneManager {
       loader.load(
         modelPath,
         (gltf) => {
+        if (requestId !== this.modelLoadRequestId) {
+          return;
+        }
         this.model = gltf.scene;
         this.model.position.set(0, -0.09, -0.03);
         this.model.rotation.set(0, -0.628, 0);
