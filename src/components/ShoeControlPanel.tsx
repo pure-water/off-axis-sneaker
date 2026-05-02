@@ -8,9 +8,9 @@ interface ShoeControlPanelProps {
   initialPosition: { x: number; y: number; z: number };
   initialScale: number;
   initialRotation: { x: number; y: number; z: number };
-  modelOptions: string[];
-  currentModel: string;
-  onModelChange: (modelName: string) => void;
+  selectedModel: string;
+  onModelChange: (path: string) => void;
+  onResetTransform: () => void;
 }
 
 const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
@@ -20,9 +20,9 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
   initialPosition,
   initialScale,
   initialRotation,
-  modelOptions,
-  currentModel,
-  onModelChange
+  selectedModel,
+  onModelChange,
+  onResetTransform
 }) => {
   const [position, setPosition] = useState(initialPosition);
   const [scale, setScale] = useState(initialScale);
@@ -139,33 +139,15 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
             <div className="pt-2 border-t border-gray-600">
               <label className="text-xs block mb-1">Model</label>
               <select
-                value={currentModel}
+                value={selectedModel}
                 onChange={(e) => onModelChange(e.target.value)}
-                className="w-full text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1"
+                className="w-full bg-gray-800 border border-gray-500 rounded px-2 py-1 text-xs"
               >
-                {modelOptions.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
+                <option value="/models/shoe.glb">Shoe (default)</option>
+                <option value="/models/face.glb">Face (alt test model)</option>
+                <option value="/models/ak47.glb">AK-47 (custom)</option>
+                <option value="/models/porche.glb">Porche (custom)</option>
               </select>
-              <p className="text-[10px] text-gray-300 mt-1">Switch model here from the control panel.</p>
-              <div className="mt-2 flex gap-1">
-                <input
-                  type="text"
-                  placeholder="e.g. microphone"
-                  value={customModelName}
-                  onChange={(e) => setCustomModelName(e.target.value)}
-                  className="w-full text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1"
-                />
-                <button
-                  type="button"
-                  onClick={handleCustomModelLoad}
-                  className="text-xs px-2 py-1 bg-blue-600 rounded hover:bg-blue-500"
-                >
-                  Load
-                </button>
-              </div>
             </div>
 
             <div className="pt-2 border-t border-gray-600">
@@ -180,6 +162,14 @@ const ShoeControlPanel: React.FC<ShoeControlPanelProps> = ({
                 className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-white"
               />
             </div>
+
+            <button
+              type="button"
+              onClick={onResetTransform}
+              className="w-full mt-2 bg-white text-black text-xs rounded py-1 hover:bg-gray-200"
+            >
+              Reset position/scale
+            </button>
           </div>
         </div>
       )}

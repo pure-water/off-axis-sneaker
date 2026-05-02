@@ -23,7 +23,7 @@ export class ThreeSceneManager {
   private debugMode: boolean = false;
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
-  private currentModelName = 'shoe';
+  private modelPath = '/models/shoe.glb';
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -99,36 +99,28 @@ export class ThreeSceneManager {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
 
-    this.findBestModelPath(modelName).then((modelPath) => {
-      if (!modelPath) {
-        console.error(`No .glb model found for "${modelName}" under /public/models.`);
-        return;
-      }
-
-      loader.load(
-        modelPath,
-        (gltf) => {
+    loader.load(
+      this.modelPath,
+      (gltf) => {
+        if (this.model) {
+          this.scene.remove(this.model);
+        }
         this.model = gltf.scene;
         this.model.position.set(0, -0.09, -0.03);
         this.model.rotation.set(0, -0.628, 0);
         this.model.scale.set(0.071, 0.071, 0.071);
         this.scene.add(this.model);
-        },
-        undefined,
-        (error) => {
-          console.error('Error loading model:', error);
-        }
-      );
-    });
+      },
+      undefined,
+      (error) => {
+        console.error(`Error loading model at ${this.modelPath}:`, error);
+      }
+    );
   }
 
-  setModel(modelName: string): void {
-    this.currentModelName = modelName;
-    if (this.model) {
-      this.scene.remove(this.model);
-      this.model = null;
-    }
-    this.loadModel(modelName);
+  setModelPath(path: string): void {
+    this.modelPath = path;
+    this.loadShoeModel();
   }
 
   private createWireframeRoom(): void {

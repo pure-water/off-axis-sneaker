@@ -18,8 +18,7 @@ function App() {
   const [shoePosition, setShoePosition] = useState({ x: 0, y: -0.09, z: -0.03 });
   const [shoeScale, setShoeScale] = useState(0.071);
   const [shoeRotation, setShoeRotation] = useState({ x: 0, y: -0.628, z: 0 });
-  const [currentModel, setCurrentModel] = useState('shoe');
-  const [modelOptions, setModelOptions] = useState<string[]>(['shoe']);
+  const [selectedModel, setSelectedModel] = useState('/models/shoe.glb');
   const headPoseTrackerRef = useRef(new HeadPoseTracker(0.3));
   const threeViewRef = useRef<ThreeViewHandle>(null);
 
@@ -180,6 +179,19 @@ function App() {
     }
   };
 
+  const handleModelChange = (path: string) => {
+    setSelectedModel(path);
+    if (threeViewRef.current) {
+      threeViewRef.current.setModelPath(path);
+    }
+  };
+
+  const handleResetTransform = () => {
+    handleShoePositionChange(0, -0.09, -0.03);
+    handleShoeScaleChange(0.071);
+    handleShoeRotationChange(0, -0.628, 0);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (threeViewRef.current) {
@@ -219,9 +231,9 @@ function App() {
           initialPosition={shoePosition}
           initialScale={shoeScale}
           initialRotation={shoeRotation}
-          modelOptions={modelOptions}
-          currentModel={currentModel}
+          selectedModel={selectedModel}
           onModelChange={handleModelChange}
+          onResetTransform={handleResetTransform}
         />
 
         <div className="absolute bottom-4 right-4 z-10 rounded-lg overflow-hidden shadow-2xl border-2 border-white">
