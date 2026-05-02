@@ -25,7 +25,7 @@ export class ThreeSceneManager {
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
   private currentModelName = 'shoe';
-  private porcheLight: THREE.DirectionalLight | null = null;
+  private porcheLights: THREE.Light[] = [];
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -99,7 +99,7 @@ export class ThreeSceneManager {
     const normalized = modelName.trim().toLowerCase();
     if (normalized === 'shoe') {
       return {
-        position: new THREE.Vector3(0.003, -0.09, -0.14),
+        position: new THREE.Vector3(0.003, -0.12, -0.14),
         rotation: new THREE.Euler(0, -0.628, 0),
         scale: 0.07
       };
@@ -116,16 +116,23 @@ export class ThreeSceneManager {
     const normalized = modelName.trim().toLowerCase();
     const needsPorcheLight = normalized === 'porche';
 
-    if (needsPorcheLight && !this.porcheLight) {
-      this.porcheLight = new THREE.DirectionalLight(0xffffff, 1.2);
-      this.porcheLight.position.set(0.5, 1.5, 1.2);
-      this.scene.add(this.porcheLight);
+    if (needsPorcheLight && this.porcheLights.length === 0) {
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      keyLight.position.set(1.5, 2.2, 1.8);
+
+      const fillLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      fillLight.position.set(-2.0, 1.0, 1.2);
+
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x202020, 1.1);
+
+      this.porcheLights = [keyLight, fillLight, hemiLight];
+      this.porcheLights.forEach((light) => this.scene.add(light));
       return;
     }
 
-    if (!needsPorcheLight && this.porcheLight) {
-      this.scene.remove(this.porcheLight);
-      this.porcheLight = null;
+    if (!needsPorcheLight && this.porcheLights.length > 0) {
+      this.porcheLights.forEach((light) => this.scene.remove(light));
+      this.porcheLights = [];
     }
   }
 

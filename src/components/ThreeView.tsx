@@ -84,7 +84,7 @@ const ThreeView = forwardRef<ThreeViewHandle, ThreeViewProps>(({ headPose }, ref
       if (sceneManagerRef.current) {
         return sceneManagerRef.current.getModelPosition();
       }
-      return { x: 0.003, y: -0.09, z: -0.14 };
+      return { x: 0.003, y: -0.12, z: -0.14 };
     },
     getModelScale: () => {
       if (sceneManagerRef.current) {
