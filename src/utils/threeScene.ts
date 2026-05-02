@@ -17,6 +17,7 @@ export class ThreeSceneManager {
   private renderer: THREE.WebGLRenderer;
   private offAxisCamera: OffAxisCamera;
   private model: THREE.Object3D | null = null;
+  private lightsInitialized = false;
   private animationFrameId: number | null = null;
   private isRunning = false;
   private currentHeadPose: HeadPose = { x: 0.5, y: 0.5, z: 1 };
@@ -81,16 +82,19 @@ export class ThreeSceneManager {
   }
 
   private loadModel(modelName: string): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
+    if (!this.lightsInitialized) {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      this.scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight1.position.set(1, 1, 1);
-    this.scene.add(directionalLight1);
+      const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight1.position.set(1, 1, 1);
+      this.scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight2.position.set(-1, -1, 0.5);
-    this.scene.add(directionalLight2);
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight2.position.set(-1, -1, 0.5);
+      this.scene.add(directionalLight2);
+      this.lightsInitialized = true;
+    }
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -108,11 +112,43 @@ export class ThreeSceneManager {
       loader.load(
         modelPath,
         (gltf) => {
-        this.model = gltf.scene;
-        this.model.position.set(0, -0.09, -0.03);
-        this.model.rotation.set(0, -0.628, 0);
-        this.model.scale.set(0.071, 0.071, 0.071);
-        this.scene.add(this.model);
+          this.model = gltf.scene;
+
+          const box = new THREE.Box3().setFromObject(this.model);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+
+          this.model.position.set(0, -0.09, -0.03);
+          this.model.rotation.set(0, -0.628, 0);
+
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const fitScale = maxDim > 0 ? 0.18 / maxDim : 0.071;
+          this.model.scale.setScalar(Math.min(Math.max(fitScale, 0.01), 0.3));
+
+          this.model.position.sub(center.multiplyScalar(this.model.scale.x));
+          this.model.position.y += -0.09;
+          this.model.position.z += -0.03;
+
+          let meshCount = 0;
+          this.model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              meshCount += 1;
+              child.castShadow = false;
+              child.receiveShadow = true;
+            }
+          });
+
+          console.info('[ThreeScene] Loaded model', {
+            modelName,
+            modelPath,
+            meshCount,
+            bboxSize: { x: size.x, y: size.y, z: size.z },
+            appliedScale: this.model.scale.x
+          });
+
+          this.scene.add(this.model);
         },
         undefined,
         (error) => {
