@@ -17,6 +17,7 @@ export class ThreeSceneManager {
   private renderer: THREE.WebGLRenderer;
   private offAxisCamera: OffAxisCamera;
   private model: THREE.Object3D | null = null;
+  private lightsInitialized = false;
   private animationFrameId: number | null = null;
   private isRunning = false;
   private currentHeadPose: HeadPose = { x: 0.5, y: 0.5, z: 1 };
@@ -24,6 +25,7 @@ export class ThreeSceneManager {
   private debugHelpers: THREE.Object3D[] = [];
   private roomObjects: THREE.Object3D[] = [];
   private currentModelName = 'shoe';
+  private porcheLight: THREE.DirectionalLight | null = null;
 
   constructor(options: ThreeSceneOptions) {
     const width = options.width || options.container.clientWidth;
@@ -80,17 +82,69 @@ export class ThreeSceneManager {
     return null;
   }
 
+
+  private async isGitLfsPointer(modelPath: string): Promise<boolean> {
+    try {
+      const response = await fetch(modelPath);
+      if (!response.ok) return false;
+      const snippet = (await response.text()).slice(0, 200);
+      return snippet.includes('git-lfs.github.com/spec/v1');
+    } catch {
+      return false;
+    }
+  }
+
+
+  private getModelDefaults(modelName: string): { position: THREE.Vector3; rotation: THREE.Euler; scale: number } {
+    const normalized = modelName.trim().toLowerCase();
+    if (normalized === 'shoe') {
+      return {
+        position: new THREE.Vector3(0.003, -0.09, -0.14),
+        rotation: new THREE.Euler(0, -0.628, 0),
+        scale: 0.07
+      };
+    }
+
+    return {
+      position: new THREE.Vector3(0, -0.09, -0.03),
+      rotation: new THREE.Euler(0, -0.628, 0),
+      scale: 0.071
+    };
+  }
+
+  private updatePorcheLight(modelName: string): void {
+    const normalized = modelName.trim().toLowerCase();
+    const needsPorcheLight = normalized === 'porche';
+
+    if (needsPorcheLight && !this.porcheLight) {
+      this.porcheLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      this.porcheLight.position.set(0.5, 1.5, 1.2);
+      this.scene.add(this.porcheLight);
+      return;
+    }
+
+    if (!needsPorcheLight && this.porcheLight) {
+      this.scene.remove(this.porcheLight);
+      this.porcheLight = null;
+    }
+  }
+
   private loadModel(modelName: string): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
+    if (!this.lightsInitialized) {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      this.scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight1.position.set(1, 1, 1);
-    this.scene.add(directionalLight1);
+      const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight1.position.set(1, 1, 1);
+      this.scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight2.position.set(-1, -1, 0.5);
-    this.scene.add(directionalLight2);
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight2.position.set(-1, -1, 0.5);
+      this.scene.add(directionalLight2);
+      this.lightsInitialized = true;
+    }
+
+    this.updatePorcheLight(modelName);
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -105,20 +159,61 @@ export class ThreeSceneManager {
         return;
       }
 
-      loader.load(
-        modelPath,
-        (gltf) => {
-        this.model = gltf.scene;
-        this.model.position.set(0, -0.09, -0.03);
-        this.model.rotation.set(0, -0.628, 0);
-        this.model.scale.set(0.071, 0.071, 0.071);
-        this.scene.add(this.model);
-        },
-        undefined,
-        (error) => {
-          console.error('Error loading model:', error);
+      this.isGitLfsPointer(modelPath).then((isPointer) => {
+        if (isPointer) {
+          console.error(`Model at ${modelPath} is a Git LFS pointer, not a real .glb binary. Run fetch_model.sh or pull LFS objects.`);
+          return;
         }
-      );
+
+        loader.load(
+          modelPath,
+          (gltf) => {
+          this.model = gltf.scene;
+
+          const box = new THREE.Box3().setFromObject(this.model);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+
+          const defaults = this.getModelDefaults(modelName);
+          this.model.position.set(0, 0, 0);
+          this.model.rotation.copy(defaults.rotation);
+
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const fitScale = maxDim > 0 ? 0.18 / maxDim : defaults.scale;
+          this.model.scale.setScalar(Math.min(Math.max(fitScale, 0.01), 0.3));
+
+          this.model.position.sub(center.multiplyScalar(this.model.scale.x));
+          this.model.position.x += defaults.position.x;
+          this.model.position.y += defaults.position.y;
+          this.model.position.z += defaults.position.z;
+
+          let meshCount = 0;
+          this.model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              meshCount += 1;
+              child.castShadow = false;
+              child.receiveShadow = true;
+            }
+          });
+
+          console.info('[ThreeScene] Loaded model', {
+            modelName,
+            modelPath,
+            meshCount,
+            bboxSize: { x: size.x, y: size.y, z: size.z },
+            appliedScale: this.model.scale.x
+          });
+
+          this.scene.add(this.model);
+        },
+          undefined,
+          (error) => {
+            console.error('Error loading model:', error);
+          }
+        );
+      });
     });
   }
 
@@ -281,14 +376,15 @@ export class ThreeSceneManager {
         z: this.model.position.z
       };
     }
-    return { x: 0, y: -0.09, z: -0.03 };
+    const defaults = this.getModelDefaults(this.currentModelName).position;
+    return { x: defaults.x, y: defaults.y, z: defaults.z };
   }
 
   getModelScale(): number {
     if (this.model) {
       return this.model.scale.x;
     }
-    return 0.071;
+    return this.getModelDefaults(this.currentModelName).scale;
   }
 
   updateModelRotation(x: number, y: number, z: number): void {
