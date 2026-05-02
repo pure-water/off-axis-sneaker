@@ -15,7 +15,7 @@ function App() {
   const [showCalibration, setShowCalibration] = useState(false);
   const [calibration, setCalibration] = useState<CalibrationData>(calibrationManager.getCalibration());
   const [debugMode, setDebugMode] = useState(false);
-  const [shoePosition, setShoePosition] = useState({ x: 0.006, y: -0.1, z: -0.139 });
+  const [shoePosition, setShoePosition] = useState({ x: 0.006, y: -0.11, z: -0.139 });
   const [shoeScale, setShoeScale] = useState(0.055);
   const [shoeRotation, setShoeRotation] = useState({ x: 0, y: -0.628, z: 0 });
   const [currentModel, setCurrentModel] = useState('shoe');

@@ -99,16 +99,16 @@ export class ThreeSceneManager {
     const normalized = modelName.trim().toLowerCase();
     if (normalized === 'shoe') {
       return {
-        position: new THREE.Vector3(0.006, -0.1, -0.139),
+        position: new THREE.Vector3(0.006, -0.11, -0.139),
         rotation: new THREE.Euler(0, -0.628, 0),
         scale: 0.055
       };
     }
 
     return {
-      position: new THREE.Vector3(0, -0.09, -0.03),
+      position: new THREE.Vector3(0, -0.07, -0.03),
       rotation: new THREE.Euler(0, -0.628, 0),
-      scale: 0.0551
+      scale: 0.071
     };
   }
 
