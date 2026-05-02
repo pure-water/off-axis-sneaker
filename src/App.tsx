@@ -68,13 +68,20 @@ function App() {
         }
         const models = await response.json();
         if (Array.isArray(models) && models.length > 0) {
-          setModelOptions(models);
-          if (!models.includes('shoe')) {
-            setCurrentModel(models[0]);
-            if (threeViewRef.current) {
-              threeViewRef.current.setModel(models[0]);
-            }
-          }
+          const normalizedModels = Array.from(
+            new Set(
+              models
+                .filter((model): model is string => typeof model === 'string')
+                .map((model) => model.trim().toLowerCase())
+                .filter(Boolean)
+            )
+          );
+
+          const modelsWithShoe = normalizedModels.includes('shoe')
+            ? normalizedModels
+            : ['shoe', ...normalizedModels];
+
+          setModelOptions(modelsWithShoe);
         }
       } catch (error) {
         console.warn('Could not load model index:', error);
